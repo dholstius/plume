@@ -1,0 +1,68 @@
+% \VignetteIndexEntry{An Introduction to Gaussian Dispersion Modeling in R} 
+% \VignetteKeywords{plume,atmospheric,dispersion,modeling}
+% \VignetteDepends{ggplot2}
+% \VignettePackage{plume}
+
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amscd}
+\usepackage[tableposition=top]{caption}
+\usepackage{ifthen}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+
+\title{An Introduction to Gaussian Dispersion Modeling in R}
+\author{David Holstius}
+\maketitle
+
+\section{Introduction}
+
+This is a brief introduction to \verb@plume@, a package that illustrates the basics of atmospheric dispersion modeling in R. It shows how you can write R code that leverages a rich ecosystem of statistical, spatial, and graphical libraries. In addition, the package itself is an example of a tool for reproducible environmental modeling research, complete with test cases and documentation (including this vignette).  
+
+Throughout this vignette we will make use of the excellent \verb@ggplot2@ package created by Hadley Wickham. For more information on creating plots with \verb@ggplot2@, type \verb@help(package='ggplot2')@ at the R prompt.
+ 
+<<load_packages>>=
+require(ggplot2)
+require(plume)
+@
+
+\section{Modeling Point Sources}
+
+[TODO]
+
+\section{Appendix}
+
+\subsection{Pasquill-Gifford Curves}
+
+<<sigma_curves>>=
+stability <- LETTERS[1:6]
+curves <- lapply(stability, PasquillGifford)
+names(curves) <- stability
+x <- 10 ^ seq(0, 5, by=0.1)
+values <- ldply(curves, function(sigma) data.frame(sigma(x)))
+values <- rename(values, c(.id='Pasquill'))
+@
+
+<<sigma_y,fig=TRUE>>=
+p <- ggplot(values) + geom_line(aes(x, y, color=Pasquill))
+ordinate <- scale_x_log10('distance to source, x (m)', 
+	breaks = 10^(0:5),
+	minor_breaks = as.vector(outer(1:10, 10^(0:5))))
+abscissa <- scale_y_log10(expression(sigma[y]), 
+	breaks = 10^(-1:4),
+	minor_breaks = as.vector(outer(1:10, 10^(-1:4))))
+show(p + ordinate + abscissa + coord_equal())
+@
+
+<<sigma_z,fig=TRUE>>=
+p <- ggplot(values) + geom_line(aes(x, z, color=Pasquill))
+abscissa <- scale_y_log10(expression(sigma[z]), 
+	breaks = 10^(-1:4),
+	minor_breaks = as.vector(outer(1:10, 10^(-1:4))))
+show(p + ordinate + abscissa + coord_equal())
+@
+
+
+\end{document}

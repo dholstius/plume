@@ -1,0 +1,17 @@
+Package: plume
+Type: Package
+Title: Gaussian dispersion modeling
+Version: 0.1
+Date: 2012-01-10
+Depends:
+    sp,
+    splines
+Author: David Holstius
+Maintainer: David Holstius <david.holstius@berkeley.edu>
+Description: Demo framework for point-source and line-source Gaussian plume
+    models.
+License: BSD
+Collate:
+    'plume.R'
+    'GaussianPlume.R'
+    'PasquillGifford.R'
