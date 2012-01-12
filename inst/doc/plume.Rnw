@@ -13,6 +13,17 @@
 
 \begin{document}
 
+% Prettier formatting via <http://www.stat.auckland.ac.nz/~ihaka/downloads/Sweave-customisation.pdf>
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em}
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+
+<<echo=false>>=
+options(width=60, continue="  ")
+@
+
 \title{An Introduction to Steady-State Gaussian Dispersion Modeling in R}
 \author{David Holstius}
 \maketitle
@@ -22,11 +33,7 @@
 This vignette is a brief introduction to \verb@plume@, a package that illustrates the basics of atmospheric dispersion modeling in R. The package itself is an example of a tool for reproducible environmental modeling research, complete with test cases and documentation (including this document). 
 
 Throughout this vignette we will make use of the excellent \verb@ggplot2@ package created by Hadley Wickham. For more information on creating plots with \verb@ggplot2@, type \verb@help(package='ggplot2')@ at the R prompt. We will also work toward integration with the \verb@sp@ library, a foundational package for anyone working with spatial data in R.
- 
-<<load_packages>>=
-require(ggplot2)
-require(plume)
-@
+
 
 \section{Steady-State Gaussian Dispersion}
 
@@ -51,6 +58,7 @@ g = exp\left[\frac{-(z-H)^2}{2\sigma_z^2}\right] +
     exp\left[\frac{-(z+H)^2}{2\sigma_z^2}\right]
 $$
 
+\pagebreak
 The orientation of the wind field is, by definition, along the positive $x$-axis. From the first term we can see that $C$ is directly proportional to $Q$, and inversely proportional to $u$. Thus, the equation is ill-defined for low wind speeds (as $u$ goes to $0$, $C$ goes to infinity). $Q$ is given in grams per second (g/s), and $H$ in meters (m) above ground level. 
 
 The second term captures the crosswind diffusivity, and the third term captures the vertical diffusivity. Both $\sigma_y$ and $\sigma_z$ are curves parameterized by $x$. At any fixed distance $x$ along the wind vector, the cross-section of the plume is a continuous two-dimensional Gaussian distribution described by these two curves. 
@@ -59,24 +67,41 @@ In this very basic example, we imagine the ground to be like a mirror: perfectly
 
 The difference between the height of the emission source---which might be something like an incinerator stack---and the receptor height is expressed by $(z-H)$. The curious $(z + H)$ term actually captures the plume's reflection. It can be imagined as the contribution from an identical emissions source which is located at $-H$ meters; that is, $H$ meters \textit{below} the ground plane.
 
-A rule of thumb is that the wind must be blowing at least 1.0 meters per second (m/s) for our model to be sensible. Under these conditions, the transport of the plume is dominated by advection, and diffusion along the wind vector is negligible. 
+A rule of thumb is that the wind must be blowing at least 1.0 meters per second (m/s) for our model to be sensible. Under these conditions, the transport of the plume is dominated by advection, and diffusion along the wind vector is negligible. Diffusion in the crosswind and vertical directions, however, gives the plume its characteristic shape. The diffusivity field $\sigma$ describes the lateral ($\sigma_y$) and vertical ($\sigma_z$) diffusivity at distance $x$ along the wind vector. 
+
+\subsection{Parameterizing the Plume}
+
+We use the \verb@GaussianPlume@ function to construct a particular plume fitting the general form of Eqn (1):
 
 <<define_plume>>=
-plume <- GaussianPlume(Q=50, H=10, u=2, sigma=PasquillGifford('D'))
+require(plume)
+Q <- 50.0   # emission rate, g/s
+H <- 10.0   # source height, m
+u <- 2.0    # wind speed, m/s
+plume <- GaussianPlume(Q, H, u, sigma=PasquillGifford('D'))
 @
 
-Diffusion does occur, however. The diffusivity field $\sigma$ describes the lateral ($\sigma_y$) and vertical ($\sigma_z$) diffusivity at distance $x$ along the wind vector. In theory, any \verb@sigma@ function may be supplied as an argument to \verb@GaussianPlume@, as long as it accepts a numeric vector $x$ and returns a list with numeric $y$ and $z$ components. 
+\verb@GaussianPlume@ is a \textit{factory function}: a function that returns another function. The object \verb@plume@, to which we assign the result, is now an instance of a new function:
 
-The \verb@plume@ package supplies a function \verb@PasquillGifford@, which relies on the same experimentally derived parameters used in the U.S. EPA's Industrial Source Control (ISC) family of models. \verb@PasquillGifford@ is a \textit{factory function}: a function that returns another function. It takes a single parameter, \verb@stability@, which is the Pasquill stability class corresponding to prevailing meteorological conditions. This in turn parameterizes the curves $\sigma_y$ and $\sigma_z$, which are obtained when the function returned by \verb@PasquillGifford@ is invoked.\footnote{For a diagram of curves corresponding to different Pasquill classes, see the Appendix.}
+<<show_plume_code>>=
+show(plume)
+@
+
+In the code for this function, there are references to \verb@sigma@ as well as $Q$, $u$, and $H$, although none of them are passed as arguments. The trick here is that we have taken advantage of R's \textit{lexical scoping}. When the \verb@plume@ function was constructed by \verb@GaussianPlume@, all of these variables were in scope. They have therefore been ``captured'' within the scope of this particular function instance, and we can refer to them there.
+
+\verb@PasquillGifford@ is also a factory function. It takes a single parameter, \verb@stability@, which is the Pasquill stability class corresponding to prevailing meteorological conditions. This in turn parameterizes the curves $\sigma_y$ and $\sigma_z$, which are obtained when the function returned by \verb@PasquillGifford@ is invoked.\footnote{For a diagram of curves corresponding to different Pasquill classes, see the Appendix.} 
+Underlying these curves are the same experimentally derived $\sigma$ parameters used in the U.S. EPA's Industrial Source Control (ISC) family of models. 
+
+Any \verb@sigma@ function may be supplied as an argument to \verb@GaussianPlume@, as long as it accepts a numeric vector $x$ and returns a list with numeric $y$ and $z$ components. You might experiment by using \verb@PasquillGifford('B')@ or \verb@PasquillGifford('E')@ instead.
 
 \subsection{Predicting Concentrations at Receptors}
 
-Having defined the plume, the next to do is specify the locations at which we would like to compute dispersed concentrations. This is our \textit{receptor grid}. 
+Having defined our plume, the next thing to do is specify the locations at which we would like to compute dispersed concentrations. This is our \textit{receptor grid}. 
 
 Here, we construct a regular Cartesian grid with \Sexpr{resolution}-meter spacing. We set the receptor height $z$ to 1.8 meters, corresponding to the height of an ``average'' adult. Our coordinate frame is in meters; all locations are relative to the emission source, which is at $(0, 0)$. The positive $x$-axis corresponds to the direction the wind is blowing. 
 
 <<construct_grid>>=
-resolution <- 100
+resolution <- 20
 locations <- expand.grid(
 	x = seq(20, 1500, by=resolution),
 	y = seq(-500, 500, by=resolution), 
@@ -100,12 +125,11 @@ cells <- data.frame(locations, mgm3 = gm3 * 1e3)
 A useful visualization is obtained by plotting the concentrations in the form of a \textit{heat map}, where the intensity of the color corresponds to the predicted concentration. This is a ``view from above'' the predicted dispersion field. 
 
 <<plot_heatmap,fig=TRUE,height=4,width=6>>=
-ggplot(subset(cells, mgm3 > 0.1), aes(x, y)) + 
+require(ggplot2)
+p <- ggplot(subset(cells, mgm3 > 0.1), aes(x, y)) + 
     geom_tile(aes(alpha=mgm3), fill='red') +
-	scale_x_continuous(limits=c(-max(x), max(x)), expand=c(0, 0)) +
-	scale_y_continuous(limits=c(-1000, 1000), expand=c(0, 0)) +
-	scale_alpha(expression(mg/m^3), to=c(0, 1)) +
-	coord_equal()
+	scale_alpha(expression(mg/m^3), to=c(0, 1))
+show(p + xlim(c(-1500, 1500)) + ylim(c(-1000, 1000)) + coord_equal())
 @
 
 Plotting is sped up substantially by dropping all of the cells with a negligible concentration (less than 0.1 $mg/m^3$).
@@ -113,6 +137,8 @@ Plotting is sped up substantially by dropping all of the cells with a negligible
 \appendix
 
 \section{Pasquill-Gifford Curves}
+
+This code demonstrates how to construct the \verb@data.frame@ of values used to generate the following plots of $\sigma_y$ and $\sigma_z$:
 
 <<sigma_curves>>=
 curves <- lapply(LETTERS[1:6], PasquillGifford)
@@ -122,7 +148,9 @@ values <- ldply(curves, function(sigma) data.frame(sigma(x)))
 values <- rename(values, c(.id='Pasquill'))
 @
 
-<<sigma_y,fig=TRUE>>=
+To see the code used to generate the plots themselves, take a look at \verb@inst/doc/plume.Rnw@ in the \verb@plume@ package source!
+
+<<sigma_y,fig=TRUE,echo=FALSE>>=
 p <- ggplot(values) + geom_line(aes(x, y, color=Pasquill))
 ordinate <- scale_x_log10('x (m)', 
 	breaks = 10^(0:5),
@@ -133,7 +161,7 @@ abscissa <- scale_y_log10(expression(sigma[y]),
 show(p + ordinate + abscissa + coord_equal())
 @
 
-<<sigma_z,fig=TRUE>>=
+<<sigma_z,fig=TRUE,echo=FALSE>>=
 p <- ggplot(values) + geom_line(aes(x, z, color=Pasquill))
 abscissa <- scale_y_log10(expression(sigma[z]), 
 	breaks = 10^(-1:4),
