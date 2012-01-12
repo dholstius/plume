@@ -21,7 +21,7 @@
 
 This vignette is a brief introduction to \verb@plume@, a package that illustrates the basics of atmospheric dispersion modeling in R. The package itself is an example of a tool for reproducible environmental modeling research, complete with test cases and documentation (including this document). 
 
-Throughout this vignette we will make use of the excellent \verb@ggplot2@ package created by Hadley Wickham. For more information on creating plots with \verb@ggplot2@, type \verb@help(package='ggplot2')@ at the R prompt. We will also work toward integrating with the \verb@sp@ library, a foundational package for anyone working with spatial data in R.
+Throughout this vignette we will make use of the excellent \verb@ggplot2@ package created by Hadley Wickham. For more information on creating plots with \verb@ggplot2@, type \verb@help(package='ggplot2')@ at the R prompt. We will also work toward integration with the \verb@sp@ library, a foundational package for anyone working with spatial data in R.
  
 <<load_packages>>=
 require(ggplot2)
@@ -30,69 +30,74 @@ require(plume)
 
 \section{Steady-State Gaussian Dispersion}
 
-Assuming a point source with constant emission rate $Q$ and a steady wind field with speed $u$, the concentration $C$ at any location $(x, y, z)$ downwind can be conceptualized as the product of three terms: 
+\subsection{Modeling a Point Source}
 
-$$
+Assuming a source of emissions with constant emission rate $Q$, and a steady wind field with speed $u$, the concentration $C$ at any location $(x, y, z)$ downwind can be conceptualized as the product of three terms: 
+
+\begin{equation}\label{PointSource}
 C = \frac{Q}{u} \cdot \frac{f}{\sigma_y\sqrt{2\pi}} \cdot \frac{g}{\sigma_z\sqrt{2\pi}}
-$$
+\end{equation}
 
 where
 
 $$
-f = exp\left[\frac{-y^2}{2\sigma_y^2)}\right]
+f = exp\left[\frac{-y^2}{2\sigma_y^2}\right]
 $$
 
 and 
 
 $$
 g = exp\left[\frac{-(z-H)^2}{2\sigma_z^2}\right] + 
-      exp\left[\frac{-(z+H)^2}{2\sigma_z^2)}\right]
+      exp\left[\frac{-(z+H)^2}{2\sigma_z^2}\right]
 $$
 
-From the first term we can see that $C$ is directly proportional to $Q$, and inversely proportional to $u$. Thus, the equation is ill-defined for low wind speeds (as $u$ goes to $0$, $C$ goes to infinity).
+From the first term we can see that $C$ is directly proportional to $Q$, and inversely proportional to $u$. Thus, the equation is ill-defined for low wind speeds (as $u$ goes to $0$, $C$ goes to infinity). The emission source, which might be something like an incinerator stack, is further described by the release height $H$. $Q$ is given in grams per second (g/s), and $H$ in meters (m) above ground level. 
 
-The second term captures the crosswind diffusivity, and the third term captures the vertical diffusivity. Both $\sigma_y$ and $\sigma_z$ are curves parameterized by $x$ (not constants). At any fixed distance $x$ from the source, the cross-section of the plume is a continuous two-dimensional Gaussian distribution described by the these two terms (hence the name).
-
-\section{Modeling Point Sources}
+The second term captures the crosswind diffusivity, and the third term captures the vertical diffusivity. Both $\sigma_y$ and $\sigma_z$ are curves parameterized by $x$. At any fixed distance $x$ from the source, the cross-section of the plume is a continuous two-dimensional Gaussian distribution described by these two curves (hence the name).
 
 In this very basic example, the plume shape will be fully described by the emission source and the prevailing meteorology. We imagine the ground to be like a mirror: perfectly level, frictionless, and flat. Rather than absorbing the plume aerosol, the ground will ``reflect'' it back toward the sky. 
 
-The emission source, which might be something like an incinerator stack, is described by two parameters: the emission rate $Q$, and the release height $H$. $Q$ is given in grams per second (g/s), and $H$ in meters (m) above ground level. 
-
-The wind must be blowing at least 1.0 meters per second (m/s). Under these conditions, the transport of the plume aerosol is dominated by advection, and not by lateral or vertical diffusion. The orientation of the wind field is, by definition, parallel to the x-axis.
+The wind must be blowing at least 1.0 meters per second (m/s). Under these conditions, the transport of the plume aerosol is dominated by advection, and diffusion along the wind vector is negligible. The orientation of the wind field is, by definition, parallel to the x-axis.
 
 <<define_plume>>=
-plume <- GaussianPlume(Q=50.0, H=10.0, u=2.0, sigma=PasquillGifford('D'))
+plume <- GaussianPlume(Q=50, H=10, u=2, sigma=PasquillGifford('D'))
 @
 
-Diffusion does occur, however. The diffusivity field ($\sigma$) describes the lateral ($\sigma_y$) and vertical ($\sigma_z$) diffusivity at distance $x$ from the source (at $(0, 0)$). In theory, any \verb@sigma@ function may be supplied, as long as it accepts a numeric vector $x$ and returns a list with numeric $y$ and $z$ components. The \verb@plume@ package supplies a function \verb@PasquillGifford@, which relies on the same experimentally derived parameters used in the U.S. EPA's Industrial Source Control (ISC) family of models.
+Diffusion does occur, however. The diffusivity field $\sigma$ describes the lateral ($\sigma_y$) and vertical ($\sigma_z$) diffusivity at distance $x$ from the source (at $(0, 0)$). In theory, any \verb@sigma@ function may be supplied as an argument to \verb@GaussianPlume@, as long as it accepts a numeric vector $x$ and returns a list with numeric $y$ and $z$ components. 
 
-It's worth noting that the function \verb@PasquillGifford@ is a \textit{factory function}: a function that returns another function. \verb@PasquillGifford@ takes a single parameter, \verb@stability@, which is the Pasquill stability class corresponding to prevailing meteorological conditions. This in turn parameterizes the curves $\sigma_y$ and $\sigma_z$. For an illustration of the curves corresponding to different values of \verb@stability@, see Section  \ref{sec:Pasquill-Gifford Curves}.
+The \verb@plume@ package supplies a function \verb@PasquillGifford@, which relies on the same experimentally derived parameters used in the U.S. EPA's Industrial Source Control (ISC) family of models. \verb@PasquillGifford@ is a \textit{factory function}: a function that returns another function. It takes a single parameter, \verb@stability@, which is the Pasquill stability class corresponding to prevailing meteorological conditions. This in turn parameterizes the curves $\sigma_y$ and $\sigma_z$, which are obtained when the function returned by \verb@PasquillGifford@ is invoked.\footnote{For an illustration of the curves corresponding to different stability classes, see the Appendix.}
 
-The first thing to do is construct a receptor grid. Our coordinate frame is in meters; all locations are relative to the emission source, which is at $(0, 0)$. The positive x-axis corresponds to the direction the wind is blowing. 
+\subsection{Predicting Concentrations at Receptors}
+
+Having defined the plume, the next to do is specify the locations at which we would like to compute dispersed concentrations. This is our \textit{receptor grid}. 
+
+Here, we construct a grid with \Sexpr{resolution}-meter spacing. We set the receptor height ($z$) to 1.8 meters, corresponding to the height of an ``average'' adult. Our coordinate frame is in meters; all locations are relative to the emission source, which is at $(0, 0)$, and the positive $x$-axis corresponds to the direction the wind is blowing. 
 
 <<construct_grid>>=
 resolution <- 20
 x <- seq(10, 2000, by=resolution)
 y <- seq(-500, 500, by=resolution)
-receptors <- as.matrix(expand.grid(x=x, y=y, z=1.8))
+locations <- as.matrix(expand.grid(x=x, y=y, z=1.8))
 @
 
-Here, we construct a grid with \Sexpr{resolution}-meter spacing. We set the receptor height ($z$) to 1.8 meters, corresponding to the height of an ``average'' adult.
-
+We use the \verb@plume@ function, defined earlier, to compute the predicted concentration at each location of interest. Then we multiply by $1,000$, in order to convert to micrograms per cubic meter ($mg/m^3$), and re-bind the predicted concentrations to the receptor locations.
 
 <<predict_concentrations>>=
-system.time(pred <- plume(receptors))
-cells <- data.frame(receptors, mgm3 = pred * 1e3)
+system.time(pred <- plume(locations))
+cells <- data.frame(locations, mgm3 = pred * 1e3)
 @
 
+\subsection{Plotting Results}
+
+A useful visualization is obtained by plotting the concentrations in the form of a \textit{heat map}, where the intensity of the color corresponds to the predicted concentration. This is a ``view from above'' the predicted dispersion field. Plotting is sped up substantially by dropping all of the cells with a negligible concentration (less than 0.1 $mg/m^3$).
+
 <<plot_heatmap,fig=TRUE>>=
-ggplot(subset(cells, mgm3 > 0.001), aes(x, y)) + coord_equal() +
-	geom_tile(aes(alpha=mgm3), fill='red') +
+ggplot(subset(cells, mgm3 > 0.1), aes(x, y)) + 
+      geom_tile(aes(alpha=mgm3), fill='red') +
 	scale_x_continuous(limits=c(0, max(x)), expand=c(0, 0)) +
 	scale_y_continuous(limits=c(-1000, 1000), expand=c(0, 0)) +
-	scale_fill_continuous() + 
-	scale_alpha(expression(over(mg, m^3)), to=c(0, 1))
+	scale_alpha(expression(mg/m^3), to=c(0, 1)) +
+	coord_equal()
 @
 
 \appendix{Appendix}
