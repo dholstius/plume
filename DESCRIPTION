@@ -13,5 +13,5 @@ Description: Demo framework for point-source and line-source Gaussian plume
 License: BSD
 Collate:
     'plume.R'
-    'GaussianPlume.R'
     'PasquillGifford.R'
+    'GaussianPlume.R'
