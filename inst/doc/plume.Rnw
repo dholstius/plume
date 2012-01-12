@@ -48,7 +48,7 @@ and
 
 $$
 g = exp\left[\frac{-(z-H)^2}{2\sigma_z^2}\right] + 
-      exp\left[\frac{-(z+H)^2}{2\sigma_z^2}\right]
+    exp\left[\frac{-(z+H)^2}{2\sigma_z^2}\right]
 $$
 
 From the first term we can see that $C$ is directly proportional to $Q$, and inversely proportional to $u$. Thus, the equation is ill-defined for low wind speeds (as $u$ goes to $0$, $C$ goes to infinity). The emission source, which might be something like an incinerator stack, is further described by the release height $H$. $Q$ is given in grams per second (g/s), and $H$ in meters (m) above ground level. 
@@ -93,7 +93,7 @@ A useful visualization is obtained by plotting the concentrations in the form of
 
 <<plot_heatmap,fig=TRUE>>=
 ggplot(subset(cells, mgm3 > 0.1), aes(x, y)) + 
-      geom_tile(aes(alpha=mgm3), fill='red') +
+    geom_tile(aes(alpha=mgm3), fill='red') +
 	scale_x_continuous(limits=c(0, max(x)), expand=c(0, 0)) +
 	scale_y_continuous(limits=c(-1000, 1000), expand=c(0, 0)) +
 	scale_alpha(expression(mg/m^3), to=c(0, 1)) +
