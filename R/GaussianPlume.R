@@ -11,23 +11,40 @@
 #'
 #' @export
 GaussianPlume <- function(Q, H, u, sigma=PasquillGifford('D')) {
-	f <- function(receptors) {
-		x <- receptors[,1]
-		y <- receptors[,2]
-		if(ncol(receptors) == 2) {
-			warning('No z values supplied. Defaulting to 1.8 m.')
-			z <- 1.8
+
+	plume.FUN <- function(receptors) {
+
+		# Extract coordinates
+		if (inherits(receptors, 'Spatial')) {
+			coords <- coordinates(receptors)
 		} else {
-			z <- receptors[,3]
+			coords <- receptors
 		}
-	    sg <- sigma(x)
-	    crosswind <- exp(-(y ^ 2) / (2 * sg$y ^ 2)) / (sg$y * sqrt(2*pi))
-	    v1 <- -(z - H) ^ 2 / (2 * sg$z ^ 2)
-	    v2 <- -(z + H) ^ 2 / (2 * sg$z ^ 2)
-	    vertical <- (exp(v1) + exp(v2)) / (sg$z * sqrt(2*pi))
-	    concentrations <- Q / u * crosswind * vertical
-	    names(concentrations) <- row.names(receptors)
-	    return(concentrations)
- 	}
-    return(f)
+		x <- coords[,1]
+		y <- coords[,2]
+		if(ncol(coords) == 2) {
+			z <- 1.8
+			warning("No z values supplied. Defaulting to ", z, " meters.")
+		} else if (ncol(coords) == 3) {
+			z <- coords[,3]
+		} else {
+			warning("Coordinates have more than 3 dimensions. Using only the first 3.")
+		}
+		
+		# Compute concentrations
+		sg <- sigma(x)
+	    f <- dnorm(y, sd = sg$y)
+		g1 <- dnorm(z - H, sd = sg$z)
+		g2 <- dnorm(z + H, sd = sg$z)
+		g <- g1 + g2
+		C <- Q / u * f * g
+	
+		# Return a nicely named vector
+		names(C) <- row.names(receptors)
+ 		return(C)
+
+	}
+	
+    return(plume.FUN)
+
 } 
