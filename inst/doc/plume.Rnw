@@ -100,14 +100,13 @@ ggplot(subset(cells, mgm3 > 0.1), aes(x, y)) +
 	coord_equal()
 @
 
-\appendix{Appendix}
+\appendix
 
 \section{Pasquill-Gifford Curves}
 
 <<sigma_curves>>=
-stability <- LETTERS[1:6]
-curves <- lapply(stability, PasquillGifford)
-names(curves) <- stability
+curves <- lapply(LETTERS[1:6], PasquillGifford)
+names(curves) <- LETTERS[1:6]
 x <- 10 ^ seq(0, 5, by=0.1)
 values <- ldply(curves, function(sigma) data.frame(sigma(x)))
 values <- rename(values, c(.id='Pasquill'))
