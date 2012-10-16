@@ -20,7 +20,7 @@
 \fvset{listparameters={\setlength{\topsep}{0pt}}}
 \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
 
-<<echo=false>>=
+<<echo=FALSE>>=
 options(width=60, continue="  ")
 @
 
@@ -128,7 +128,7 @@ A useful visualization is obtained by plotting the concentrations in the form of
 require(ggplot2)
 p <- ggplot(subset(cells, mgm3 > 0.1), aes(x, y)) + 
     geom_tile(aes(alpha=mgm3), fill='red') +
-	scale_alpha(expression(mg/m^3), to=c(0, 1))
+	scale_alpha(expression(mg/m^3), range=c(0, 1))
 show(p + xlim(c(-1500, 1500)) + ylim(c(-1000, 1000)) + coord_equal())
 @
 
@@ -146,26 +146,30 @@ names(curves) <- LETTERS[1:6]
 x <- 10 ^ seq(0, 5, by=0.1)
 values <- ldply(curves, function(sigma) data.frame(sigma(x)))
 values <- rename(values, c(.id='Pasquill'))
+values$x <- x
 @
 
 To see the code used to generate the plots themselves, take a look at \verb@inst/doc/plume.Rnw@ in the \verb@plume@ package source!
 
 <<sigma_y,fig=TRUE,echo=FALSE>>=
-p <- ggplot(values) + geom_line(aes(x, y, color=Pasquill))
-ordinate <- scale_x_log10('x (m)', 
-	breaks = 10^(0:5),
-	minor_breaks = as.vector(outer(1:10, 10^(0:5))))
-abscissa <- scale_y_log10(expression(sigma[y]), 
-	breaks = 10^(-1:4),
-	minor_breaks = as.vector(outer(1:10, 10^(-1:4))))
+p <- ggplot(values, aes(x, y, color=Pasquill)) + geom_line()
+ordinate <- scale_x_continuous('downwind distance (m)',
+	trans = log10_trans(),
+	breaks = trans_breaks("log10", function(x) 10^x),
+	labels = trans_format("log10", math_format(10^.x)))
+abscissa <- scale_y_continuous(expression(sigma[y]),
+	trans = log10_trans(),
+	breaks = trans_breaks("log10", function(x) 10^x),
+	labels = trans_format("log10", math_format(10^.x)))
 show(p + ordinate + abscissa + coord_equal())
 @
 
 <<sigma_z,fig=TRUE,echo=FALSE>>=
-p <- ggplot(values) + geom_line(aes(x, z, color=Pasquill))
-abscissa <- scale_y_log10(expression(sigma[z]), 
-	breaks = 10^(-1:4),
-	minor_breaks = as.vector(outer(1:10, 10^(-1:4))))
+p <- ggplot(values, aes(x, z, color=Pasquill)) + geom_line()
+abscissa <- scale_y_continuous(expression(sigma[z]),
+	trans = log10_trans(),
+	breaks = trans_breaks("log10", function(x) 10^x),
+	labels = trans_format("log10", math_format(10^.x)))
 show(p + ordinate + abscissa + coord_equal())
 @
 

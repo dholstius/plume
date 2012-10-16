@@ -6,6 +6,8 @@ Date: 2012-01-10
 Depends:
     sp,
     splines
+Suggests:
+    ggplot2
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
 Description: Demo framework for point-source and line-source Gaussian plume
