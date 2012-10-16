@@ -2,7 +2,7 @@
 \alias{VenkatramHorst}
 \title{VenkatramHorst}
 \usage{
-  VenkatramHorst(Q, u, phi, sigma = Briggs("D"))
+  VenkatramHorst(Q, u, phi, L, sigma = Briggs("D"))
 }
 \arguments{
   \item{Q}{source emission rate (g/s)}
@@ -25,6 +25,6 @@
 }
 \references{
   Venkatram, A., and Horst, T.W. (2006) Atmospheric
-  Environment 40, 2401–2408.
+  Environment 40, 2401-2408.
 }
 

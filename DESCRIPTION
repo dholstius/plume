@@ -7,7 +7,9 @@ Depends:
     sp,
     splines
 Suggests:
-    ggplot2
+    ggplot2,
+    plyr,
+    scales
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
 Description: Demo framework for point-source and line-source Gaussian plume

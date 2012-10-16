@@ -9,10 +9,10 @@
 #' @param sigma (optional) function describing plume diffusivity (see Note)
 #' @return a function f(x, y) parameterized with the above terms
 #'
-#' @references Venkatram, A., and Horst, T.W. (2006) Atmospheric Environment 40, 2401–2408.
+#' @references Venkatram, A., and Horst, T.W. (2006) Atmospheric Environment 40, 2401-2408.
 #'
 #' @export
-VenkatramHorst <- function(Q, u, phi, sigma=Briggs('D')) {
+VenkatramHorst <- function(Q, u, phi, L, sigma=Briggs('D')) {
 	C <- function(x, y) {
 		stop('Unimplemented')
 	}

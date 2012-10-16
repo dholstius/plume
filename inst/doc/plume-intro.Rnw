@@ -1,6 +1,6 @@
 % \VignetteIndexEntry{An Introduction to Gaussian Dispersion Modeling in R} 
 % \VignetteKeywords{plume,atmospheric,dispersion,modeling}
-% \VignetteDepends{ggplot2}
+% \VignetteDepends{ggplot2,plyr,scales}
 % \VignettePackage{plume}
 
 \documentclass{article}
@@ -98,7 +98,7 @@ Any \verb@sigma@ function may be supplied as an argument to \verb@GaussianPlume@
 
 Having defined our plume, the next thing to do is specify the locations at which we would like to compute dispersed concentrations. This is our \textit{receptor grid}. 
 
-Here, we construct a regular Cartesian grid with \Sexpr{resolution}-meter spacing. We set the receptor height $z$ to 1.8 meters, corresponding to the height of an ``average'' adult. Our coordinate frame is in meters; all locations are relative to the emission source, which is at $(0, 0)$. The positive $x$-axis corresponds to the direction the wind is blowing. 
+Here, we construct a regular Cartesian grid. We set the receptor height $z$ to 1.8 meters, corresponding to the height of an ``average'' adult. Our coordinate frame is in meters; all locations are relative to the emission source, which is at $(0, 0)$. The positive $x$-axis corresponds to the direction the wind is blowing. 
 
 <<construct_grid>>=
 resolution <- 20
@@ -141,6 +141,7 @@ Plotting is sped up substantially by dropping all of the cells with a negligible
 This code demonstrates how to construct the \verb@data.frame@ of values used to generate the following plots of $\sigma_y$ and $\sigma_z$:
 
 <<sigma_curves>>=
+require(plyr)
 curves <- lapply(LETTERS[1:6], PasquillGifford)
 names(curves) <- LETTERS[1:6]
 x <- 10 ^ seq(0, 5, by=0.1)
@@ -152,6 +153,7 @@ values$x <- x
 To see the code used to generate the plots themselves, take a look at \verb@inst/doc/plume.Rnw@ in the \verb@plume@ package source!
 
 <<sigma_y,fig=TRUE,echo=FALSE>>=
+require(scales)
 p <- ggplot(values, aes(x, y, color=Pasquill)) + geom_line()
 ordinate <- scale_x_continuous('downwind distance (m)',
 	trans = log10_trans(),
