@@ -81,18 +81,18 @@ u <- 2.0    # wind speed, m/s
 plume <- GaussianPlume(Q, H, u, sigma=PasquillGifford('D'))
 @
 
-\verb@GaussianPlume@ is a \textit{factory function}: a function that returns another function. The object \verb@plume@, to which we assign the result, is now an instance of a new function:
+\verb@GaussianPlume@ is a \textit{factory function}: a function that returns another function. The object \verb@plume@, to which we assign the result, is now an instance of a new function. To inspect the function body, just type the following:
 
-<<show_plume_code>>=
+<<show_plume_code,results=hide>>=
 show(plume)
 @
 
-In the code for this function, there are references to \verb@sigma@ as well as $Q$, $u$, and $H$, although none of them are passed as arguments. The trick here is that we have taken advantage of R's \textit{lexical scoping}. When the \verb@plume@ function was constructed by \verb@GaussianPlume@, all of these variables were in scope. They have therefore been ``captured'' within the scope of this particular function instance, and we can refer to them there.
+In the code, you can see there are references to \verb@sigma@ as well as $Q$, $u$, and $H$, although none are passed as arguments. The trick here is that we have taken advantage of R's \textit{lexical scoping}. When the \verb@plume@ function was constructed by \verb@GaussianPlume@, all of these variables were in scope. They have therefore been ``captured'' within the scope of this particular function instance, and we can refer to them there.
 
 \verb@PasquillGifford@ is also a factory function. It takes a single parameter, \verb@stability@, which is the Pasquill stability class corresponding to prevailing meteorological conditions. This in turn parameterizes the curves $\sigma_y$ and $\sigma_z$, which are obtained when the function returned by \verb@PasquillGifford@ is invoked.\footnote{For a diagram of curves corresponding to different Pasquill classes, see the Appendix.} 
 Underlying these curves are the same experimentally derived $\sigma$ parameters used in the U.S. EPA's Industrial Source Control (ISC) family of models. 
 
-Any \verb@sigma@ function may be supplied as an argument to \verb@GaussianPlume@, as long as it accepts a numeric vector $x$ and returns a list with numeric $y$ and $z$ components. You might experiment by using \verb@PasquillGifford('B')@ or \verb@PasquillGifford('E')@ instead.
+Any \verb@sigma@ function may be supplied as an argument to \verb@GaussianPlume@, as long as it accepts a numeric vector $x$ and returns a list with numeric $y$ and $z$ components. You might experiment by using \verb@PasquillGifford('B')@ or \verb@PasquillGifford('E')@ instead of \verb@PasquillGifford('D')@.
 
 \subsection{Predicting Concentrations at Receptors}
 

@@ -4,7 +4,7 @@
 #'
 #' @param stability Pasquill stability class (A-F)
 #'
-#' @return a function sigma(x) that returns a list with y and z components
+#' @return a function sigma(x) returning a list with y and z components
 #'
 #' @rdname PasquillGifford
 #' @export
